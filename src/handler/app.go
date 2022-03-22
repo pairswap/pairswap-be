@@ -46,7 +46,15 @@ func (a *App) registerHandlers() {
 		Handler: supportFormHandler.HandleSubmitSupportForm,
 	}
 
+	gasCostHandler := NewGasCostHandler(a.Config.SisuServerURL, a.Config.SisuGasCostPath)
+	gasCostRoute := &Route{
+		Path:    "/getGasFeeInToken",
+		Method:  http.MethodGet,
+		Handler: gasCostHandler.HandleGetGasCost,
+	}
+
 	a.Router.HandleFunc(supportFormRoute.Path, supportFormRoute.Handler).Methods(supportFormRoute.Method)
+	a.Router.HandleFunc(gasCostRoute.Path, gasCostRoute.Handler).Methods(gasCostRoute.Method)
 }
 
 func (a *App) registerMiddlewares() {

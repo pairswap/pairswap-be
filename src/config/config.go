@@ -4,9 +4,13 @@ import (
 	"github.com/sisu-network/pairswap-be/src/store"
 )
 
+const defaultSisuServeURL = "0.0.0.0:1317"
+
 type AppConfig struct {
-	Port int
-	DB   store.PostgresConfig
+	SisuServerURL   string
+	SisuGasCostPath string
+	Port            int
+	DB              store.PostgresConfig
 }
 
 func NewDefaultAppConfig() AppConfig {
@@ -21,5 +25,10 @@ func NewDefaultAppConfig() AppConfig {
 	}
 
 	port := 8080
-	return AppConfig{DB: dbConfig, Port: port}
+	return AppConfig{
+		SisuServerURL:   defaultSisuServeURL,
+		SisuGasCostPath: "/getGasFeeInToken",
+		DB:              dbConfig,
+		Port:            port,
+	}
 }
