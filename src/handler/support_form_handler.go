@@ -53,5 +53,10 @@ func (h *SupportFormHandler) HandleSubmitSupportForm(w http.ResponseWriter, r *h
 		return
 	}
 
+	if err := request.Send(); err != nil {
+		_ = responseError(w, err)
+		return
+	}
+
 	_ = responseSuccess(w, map[string]interface{}{"msg": "create support form successfully"})
 }
