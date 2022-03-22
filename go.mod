@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/gorilla/mux v1.8.0
+	github.com/joho/godotenv v1.4.0
 	github.com/sisu-network/lib v0.0.1-alpha9
 	github.com/stretchr/testify v1.7.0
 	gorm.io/driver/postgres v1.2.3

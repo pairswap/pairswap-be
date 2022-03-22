@@ -30,7 +30,7 @@ type GasCostRecord struct {
 }
 
 type GasCostHandler struct {
-	// key: chain + token address
+	// key: chain + token id
 	// value: gas cost record
 	GasCostMap map[string]*GasCostRecord
 
@@ -47,27 +47,31 @@ func NewGasCostHandler(sisuServerURL, sisuGasCostPath string) *GasCostHandler {
 }
 
 func (h *GasCostHandler) HandleGetGasCost(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Error(err)
-		_ = responseError(w, err)
+	queryStr := r.URL.Query()
+	tokenId := queryStr.Get("token_id")
+	if len(tokenId) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		if _, err := w.Write([]byte("missing token_id")); err != nil {
+			log.Warn(err)
+		}
+		return
+	}
+	chainId := queryStr.Get("chain")
+	if len(chainId) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		if _, err := w.Write([]byte("missing chain")); err != nil {
+			log.Warn(err)
+		}
 		return
 	}
 
-	request := &GasCostRequest{}
-	if err := json.Unmarshal(body, request); err != nil {
-		log.Error(err)
-		_ = responseError(w, err)
-		return
-	}
-
-	key := h.getKey(request.Chain, request.TokenId)
+	key := h.getKey(chainId, tokenId)
 	if record, ok := h.GasCostMap[key]; ok {
 		// if not expired then just return the cache record
 		if record.LatestUpdatedTime.Add(UpdateGasCostInterval).After(time.Now()) {
 			_ = responseSuccess(w, map[string]interface{}{
-				"chain":    request.Chain,
-				"token_id": request.TokenId,
+				"chain":    chainId,
+				"token_id": tokenId,
 				"gas_cost": record.Cost,
 			})
 
@@ -75,7 +79,7 @@ func (h *GasCostHandler) HandleGetGasCost(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	cost, err := h.getGasCostFromSisu(request.Chain, request.TokenId)
+	cost, err := h.getGasCostFromSisu(chainId, tokenId)
 	if err != nil {
 		log.Error(err)
 		_ = responseError(w, err)
@@ -88,8 +92,8 @@ func (h *GasCostHandler) HandleGetGasCost(w http.ResponseWriter, r *http.Request
 	}
 
 	_ = responseSuccess(w, map[string]interface{}{
-		"chain":    request.Chain,
-		"token_id": request.TokenId,
+		"chain":    chainId,
+		"token_id": tokenId,
 		"gas_cost": cost,
 	})
 }
@@ -97,7 +101,7 @@ func (h *GasCostHandler) HandleGetGasCost(w http.ResponseWriter, r *http.Request
 func (h *GasCostHandler) getGasCostFromSisu(chain, token string) (int64, error) {
 	req, err := http.NewRequest(http.MethodGet, h.SisuServerURL+h.SisuGasCostPath, nil)
 	if err != nil {
-		log.Error(err)
+		log.Error("error when new request ", err)
 		return -1, err
 	}
 
