@@ -20,7 +20,7 @@ func (h *SupportFormRequest) Send() error {
 
 	if err != nil {
 		return err
-	} else {
-		return nil
 	}
+
+	return nil
 }
